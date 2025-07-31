@@ -1,0 +1,428 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Zenith.ai{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Dashboard
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Welcome back, {{ current_user.first_name }}! Here's your brand performance overview.
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+            {% if current_brand %}
+            <button onclick="quickTest()"
+                    class="inline-flex items-center px-4 py-2 border border-blue-300 rounded-md shadow-sm text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="zap" class="w-4 h-4 mr-2"></i>
+                Quick Test
+            </button>
+            <button onclick="runFullMonitoring()"
+                    class="inline-flex items-center px-4 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                Run Monitoring
+            </button>
+            {% endif %}
+            <a href="{{ url_for('dashboard.new_brand') }}"
+               class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add Brand
+            </a>
+        </div>
+    </div>
+
+    {% if not brands %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="search" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No brands yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first brand to monitor.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('dashboard.new_brand') }}"
+               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add your first brand
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Brand Selection -->
+    <div class="mb-6">
+        <label for="brand-select" class="block text-sm font-medium text-gray-700 mb-2">Select Brand</label>
+        <select id="brand-select" onchange="changeBrand(this.value)"
+                class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            {% for brand in brands %}
+            <option value="{{ brand.id }}" {% if brand.id == current_brand.id %}selected{% endif %}>
+                {{ brand.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Monitoring Status -->
+    <div id="monitoring-status" class="hidden mb-6">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-blue-800" id="monitoring-message">
+                        Running brand monitoring...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <!-- Visibility Score -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="eye" class="h-6 w-6 text-gray-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Visibility Score</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="visibility-score">
+                                {{ "%.1f"|format(metrics.visibility_score) if metrics else "0.0" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="font-medium text-blue-600" id="visibility-status">
+                        {% if metrics and metrics.visibility_score > 50 %}Good performance
+                        {% elif metrics and metrics.visibility_score > 20 %}Fair performance
+                        {% else %}Getting started{% endif %}
+                    </span>
+                    <span class="text-gray-500">overall</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Mentions -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="message-circle" class="h-6 w-6 text-gray-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Total Mentions</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="total-mentions">
+                                {{ metrics.total_mentions if metrics else 0 }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="font-medium text-green-600" id="mentions-status">
+                        {% if metrics and metrics.total_mentions > 0 %}Active tracking
+                        {% else %}Run monitoring{% endif %}
+                    </span>
+                    <span class="text-gray-500">across platforms</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sentiment Score -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="heart" class="h-6 w-6 text-gray-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Sentiment Score</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="sentiment-score">
+                                {{ "%.2f"|format(metrics.sentiment_score) if metrics else "0.00" }}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="font-medium text-gray-600" id="sentiment-status">
+                        {% if metrics %}
+                            {% if metrics.sentiment_score > 0.1 %}Positive
+                            {% elif metrics.sentiment_score < -0.1 %}Negative
+                            {% else %}Neutral{% endif %}
+                        {% else %}No data{% endif %}
+                    </span>
+                    <span class="text-gray-500">sentiment</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Share of Voice -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="volume-2" class="h-6 w-6 text-gray-400"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Share of Voice</dt>
+                            <dd class="text-lg font-medium text-gray-900" id="share-of-voice">
+                                {{ "%.1f"|format(metrics.share_of_voice) if metrics else "0.0" }}%
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-5 py-3">
+                <div class="text-sm">
+                    <span class="font-medium text-blue-600" id="sov-status">
+                        {% if metrics and metrics.share_of_voice > 10 %}Strong presence
+                        {% elif metrics and metrics.share_of_voice > 0 %}Building presence
+                        {% else %}Getting started{% endif %}
+                    </span>
+                    <span class="text-gray-500">in market</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brand Info and Getting Started -->
+    {% if current_brand %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Brand Info -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">{{ current_brand.name }}</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="space-y-4">
+                    {% if current_brand.domain %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Website</dt>
+                        <dd class="mt-1 text-sm text-gray-900">
+                            <a href="{{ current_brand.domain }}" target="_blank" class="text-blue-600 hover:text-blue-500">
+                                {{ current_brand.domain }}
+                            </a>
+                        </dd>
+                    </div>
+                    {% endif %}
+
+                    {% if current_brand.industry %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Industry</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ current_brand.industry.title() }}</dd>
+                    </div>
+                    {% endif %}
+
+                    {% if current_brand.keywords %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Keywords</dt>
+                        <dd class="mt-1">
+                            {% for keyword in current_brand.keywords[:5] %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-1 mb-1">
+                                    {{ keyword }}
+                                </span>
+                            {% endfor %}
+                            {% if current_brand.keywords|length > 5 %}
+                                <span class="text-sm text-gray-500">+{{ current_brand.keywords|length - 5 }} more</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Quick Actions</h3>
+            </div>
+            <div class="px-6 py-4 space-y-4">
+                <button onclick="quickTest()"
+                        class="w-full flex items-center justify-center px-4 py-3 border border-blue-300 rounded-md shadow-sm bg-blue-50 text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i data-lucide="zap" class="w-5 h-5 mr-2"></i>
+                    Quick Visibility Test
+                </button>
+
+                <button onclick="runFullMonitoring()"
+                        class="w-full flex items-center justify-center px-4 py-3 border border-green-300 rounded-md shadow-sm bg-green-50 text-green-700 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <i data-lucide="search" class="w-5 h-5 mr-2"></i>
+                    Run Full Monitoring
+                </button>
+
+                <a href="{{ url_for('dashboard.edit_brand', brand_id=current_brand.id) }}"
+                   class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md shadow-sm bg-white text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i data-lucide="edit" class="w-5 h-5 mr-2"></i>
+                    Edit Brand Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Getting Started -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i data-lucide="info" class="h-5 w-5 text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800">Getting Started with Real-Time Monitoring</h3>
+                <div class="mt-2 text-sm text-blue-700">
+                    <p>Your Zenith.ai platform is ready! To see real data:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">
+                        <li>Click "Quick Test" to test your brand visibility immediately</li>
+                        <li>Use "Run Full Monitoring" for comprehensive analysis</li>
+                        <li>Make sure your OpenAI/Claude API keys are configured</li>
+                        <li>Results will update your dashboard metrics in real-time</li>
+                    </ul>
+                </div>
+                <div class="mt-4">
+                    <div class="-mx-2 -my-1.5 flex">
+                        {% if current_brand %}
+                        <button onclick="quickTest()"
+                               class="bg-blue-100 px-3 py-2 rounded-md text-sm font-medium text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-50 focus:ring-blue-600 mr-2">
+                            Try Quick Test
+                        </button>
+                        {% endif %}
+                        <a href="{{ url_for('analytics.overview') }}"
+                           class="bg-blue-100 px-3 py-2 rounded-md text-sm font-medium text-blue-800 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-blue-50 focus:ring-blue-600">
+                            View Analytics
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentBrandId = {{ current_brand.id if current_brand else 'null' }};
+
+function changeBrand(brandId) {
+    currentBrandId = brandId;
+    window.location.href = '/?brand_id=' + brandId;
+}
+
+function quickTest() {
+    if (!currentBrandId) {
+        alert('Please select a brand first');
+        return;
+    }
+
+    showMonitoringStatus('Running quick visibility test...');
+
+    fetch(`/api/brand/${currentBrandId}/quick-test`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideMonitoringStatus();
+
+        if (data.success) {
+            let message = `Quick test completed!\n\n`;
+            message += `Query tested: "${data.test_query}"\n`;
+            message += `Mentions found: ${data.mentions_found}\n`;
+            message += `Platforms with mentions: ${data.platforms_with_mentions.join(', ') || 'None'}\n\n`;
+
+            if (data.mentions_found > 0) {
+                message += `Great! Your brand was found in AI responses. Run full monitoring for complete analysis.`;
+            } else {
+                message += `No direct mentions found. This might be normal for new brands. Try running full monitoring to see detailed results.`;
+            }
+
+            alert(message);
+
+            // Refresh page to show updated metrics
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            alert('Error running test: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        hideMonitoringStatus();
+        console.error('Error:', error);
+        alert('Error running quick test. Please check your API keys and try again.');
+    });
+}
+
+function runFullMonitoring() {
+    if (!currentBrandId) {
+        alert('Please select a brand first');
+        return;
+    }
+
+    showMonitoringStatus('Running comprehensive brand monitoring... This may take a few minutes.');
+
+    fetch(`/api/brand/${currentBrandId}/monitor`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideMonitoringStatus();
+
+        if (data.success) {
+            let results = data.results;
+            let message = `Monitoring completed for ${results.brand_name}!\n\n`;
+            message += `Queries tested: ${results.queries_tested}\n`;
+            message += `Total mentions: ${results.total_mentions}\n`;
+            message += `Average visibility: ${results.average_visibility.toFixed(1)}\n`;
+            message += `Average sentiment: ${results.average_sentiment.toFixed(2)}\n\n`;
+            message += `Dashboard metrics have been updated with real data!`;
+
+            alert(message);
+
+            // Refresh page to show updated metrics
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            alert('Error running monitoring: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        hideMonitoringStatus();
+        console.error('Error:', error);
+        alert('Error running monitoring. Please check your API keys and try again.');
+    });
+}
+
+function showMonitoringStatus(message) {
+    document.getElementById('monitoring-message').textContent = message;
+    document.getElementById('monitoring-status').classList.remove('hidden');
+}
+
+function hideMonitoringStatus() {
+    document.getElementById('monitoring-status').classList.add('hidden');
+}
+</script>
+{% endblock %}

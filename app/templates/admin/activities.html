@@ -1,0 +1,291 @@
+{% extends "admin/base.html" %}
+
+{% block title %}User Activities{% endblock %}
+{% block page_title %}User Activities{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">Activity Type</label>
+                <select name="type" id="type" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Types</option>
+                    {% for activity_type in activity_types %}
+                        <option value="{{ activity_type }}" {% if activity_type == selected_type %}selected{% endif %}>
+                            {{ activity_type.replace('_', ' ').title() }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">User</label>
+                <select name="user_id" id="user_id" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Users</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}" {% if user.id == selected_user_id %}selected{% endif %}>
+                            {{ user.get_full_name() }} ({{ user.email }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="flex items-end">
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 mr-2">
+                    <i class="fas fa-filter mr-2"></i>Filter
+                </button>
+                <a href="{{ url_for('admin.activities') }}" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Activities Table -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">
+                Activity Logs 
+                <span class="text-sm font-normal text-gray-500">
+                    ({{ activities.total }} total)
+                </span>
+            </h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+            {% if activities.items %}
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Agent</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for activity in activities.items %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                    {% if activity.user %}
+                                        {{ activity.user.first_name[0] }}{{ activity.user.last_name[0] }}
+                                    {% else %}
+                                        ?
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">
+                                        {% if activity.user %}
+                                            <a href="{{ url_for('admin.user_detail', user_id=activity.user.id) }}" 
+                                               class="text-blue-600 hover:text-blue-800">
+                                                {{ activity.user.get_full_name() }}
+                                            </a>
+                                        {% else %}
+                                            Deleted User
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        {% if activity.user %}
+                                            {{ activity.user.email }}
+                                        {% else %}
+                                            ID: {{ activity.user_id }}
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full
+                                {% if activity.activity_type == 'login' %}bg-green-100 text-green-800
+                                {% elif activity.activity_type == 'logout' %}bg-red-100 text-red-800
+                                {% elif activity.activity_type == 'brand_created' %}bg-purple-100 text-purple-800
+                                {% elif activity.activity_type == 'ai_overview' %}bg-blue-100 text-blue-800
+                                {% elif activity.activity_type == 'search_query' %}bg-yellow-100 text-yellow-800
+                                {% elif activity.activity_type == 'user_status_changed' %}bg-orange-100 text-orange-800
+                                {% elif activity.activity_type == 'user_role_changed' %}bg-pink-100 text-pink-800
+                                {% else %}bg-gray-100 text-gray-800
+                                {% endif %}">
+                                {{ activity.activity_type.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            {{ activity.description or '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ activity.ip_address or '-' }}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                            {{ activity.user_agent or '-' }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="flex flex-col">
+                                <span>{{ activity.timestamp.strftime('%m/%d/%Y') }}</span>
+                                <span class="text-xs text-gray-400">{{ activity.timestamp.strftime('%H:%M:%S') }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button onclick="viewActivityDetails({{ activity.id }})" 
+                                    class="text-blue-600 hover:text-blue-900">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-8 text-center">
+                <i class="fas fa-history text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No activities found matching your criteria.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if activities.pages > 1 %}
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing {{ activities.per_page * (activities.page - 1) + 1 }} to 
+                    {{ activities.per_page * activities.page if activities.page < activities.pages else activities.total }} 
+                    of {{ activities.total }} results
+                </div>
+                <div class="flex space-x-2">
+                    {% if activities.has_prev %}
+                        <a href="{{ url_for('admin.activities', page=activities.prev_num, type=selected_type, user_id=selected_user_id) }}" 
+                           class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-3 py-2 rounded-md text-sm">
+                            Previous
+                        </a>
+                    {% endif %}
+                    
+                    {% for page_num in activities.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != activities.page %}
+                                <a href="{{ url_for('admin.activities', page=page_num, type=selected_type, user_id=selected_user_id) }}" 
+                                   class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-3 py-2 rounded-md text-sm">
+                                    {{ page_num }}
+                                </a>
+                            {% else %}
+                                <span class="bg-blue-600 text-white px-3 py-2 rounded-md text-sm">
+                                    {{ page_num }}
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="px-3 py-2 text-sm">...</span>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if activities.has_next %}
+                        <a href="{{ url_for('admin.activities', page=activities.next_num, type=selected_type, user_id=selected_user_id) }}" 
+                           class="bg-white border border-gray-300 text-gray-500 hover:bg-gray-50 px-3 py-2 rounded-md text-sm">
+                            Next
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Activity Details Modal -->
+<div id="activityModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Activity Details</h3>
+                <button onclick="closeActivityModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="activityDetails">
+                <!-- Activity details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewActivityDetails(activityId) {
+    fetch(`/admin/api/activity/${activityId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayActivityDetails(data.activity);
+                document.getElementById('activityModal').classList.remove('hidden');
+            } else {
+                alert('Error loading activity details');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error loading activity details');
+        });
+}
+
+function displayActivityDetails(activity) {
+    const detailsHtml = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Activity Type</label>
+                    <p class="mt-1 text-sm text-gray-900">${activity.activity_type}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">User</label>
+                    <p class="mt-1 text-sm text-gray-900">${activity.user_name || 'Unknown'}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">IP Address</label>
+                    <p class="mt-1 text-sm text-gray-900">${activity.ip_address || 'N/A'}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Timestamp</label>
+                    <p class="mt-1 text-sm text-gray-900">${activity.timestamp}</p>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Description</label>
+                <p class="mt-1 text-sm text-gray-900">${activity.description || 'No description'}</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700">User Agent</label>
+                <p class="mt-1 text-sm text-gray-900 break-all">${activity.user_agent || 'N/A'}</p>
+            </div>
+            
+            ${activity.extra_data ? `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Extra Data</label>
+                    <pre class="mt-1 text-sm text-gray-900 bg-gray-100 p-2 rounded">${JSON.stringify(activity.extra_data, null, 2)}</pre>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    
+    document.getElementById('activityDetails').innerHTML = detailsHtml;
+}
+
+function closeActivityModal() {
+    document.getElementById('activityModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('activityModal');
+    if (event.target === modal) {
+        closeActivityModal();
+    }
+}
+</script>
+{% endblock %}

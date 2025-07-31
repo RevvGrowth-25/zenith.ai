@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - Zenith.ai{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+{% block page_description %}Manage your account information and preferences{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Profile Info Card -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-full gradient-bg flex items-center justify-center text-white text-xl font-bold">
+                                {{ user.first_name[0] }}{{ user.last_name[0] }}
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-900">{{ user.get_full_name() }}</h2>
+                                <p class="text-gray-600">{{ user.email }}</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if user.is_admin() %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                        {% if user.is_admin() %}Administrator{% else %}{{ user.role.title() }}{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('profile.edit_profile') }}" 
+                           class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
+                            Edit Profile
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Profile Details -->
+                <div class="px-6 py-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                            <p class="text-gray-900 font-medium">{{ user.first_name }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                            <p class="text-gray-900 font-medium">{{ user.last_name }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                            <p class="text-gray-900 font-medium">{{ user.username }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <p class="text-gray-900 font-medium">{{ user.email }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                            <p class="text-gray-900 font-medium">{{ user.company or 'Not specified' }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Member Since</label>
+                            <p class="text-gray-900 font-medium">{{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'N/A' }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <a href="{{ url_for('profile.change_password') }}" 
+                           class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                            <i data-lucide="lock" class="w-4 h-4 mr-2"></i>
+                            Change Password
+                        </a>
+                        <a href="{{ url_for('profile.settings') }}" 
+                           class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors">
+                            <i data-lucide="settings" class="w-4 h-4 mr-2"></i>
+                            Account Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats & Activity Card -->
+        <div class="space-y-6">
+            <!-- Stats Card -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Statistics</h3>
+                <div class="space-y-4" id="profileStats">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Total Brands</span>
+                        <span class="font-medium text-gray-900">{{ user.brands|length }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Login Count</span>
+                        <span class="font-medium text-gray-900">{{ user.get_login_count() }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Last Login</span>
+                        <span class="font-medium text-gray-900">
+                            {{ user.last_login.strftime('%m/%d/%Y') if user.last_login else 'Never' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <div id="recentActivity" class="space-y-3">
+                    <div class="text-center text-gray-500 py-4">
+                        <i data-lucide="loader" class="w-6 h-6 mx-auto mb-2 animate-spin"></i>
+                        Loading activity...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load user activity
+    fetch('/profile/api/profile/activity')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayActivity(data.activities);
+            } else {
+                showActivityError();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading activity:', error);
+            showActivityError();
+        });
+    
+    function displayActivity(activities) {
+        const container = document.getElementById('recentActivity');
+        
+        if (activities.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 text-center py-4">No recent activity</p>';
+            return;
+        }
+        
+        container.innerHTML = activities.slice(0, 5).map(activity => `
+            <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i data-lucide="${getActivityIcon(activity.activity_type)}" class="w-4 h-4 text-blue-600"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900">${activity.description}</p>
+                    <p class="text-xs text-gray-500">${formatDate(activity.timestamp)}</p>
+                </div>
+            </div>
+        `).join('');
+        
+        // Reinitialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+    
+    function showActivityError() {
+        const container = document.getElementById('recentActivity');
+        container.innerHTML = '<p class="text-red-500 text-center py-4">Error loading activity</p>';
+    }
+    
+    function getActivityIcon(type) {
+        const icons = {
+            'login': 'log-in',
+            'logout': 'log-out',
+            'profile_update': 'user',
+            'password_change': 'lock',
+            'settings_update': 'settings',
+            'brand_created': 'tag',
+            'search_performed': 'search'
+        };
+        return icons[type] || 'activity';
+    }
+    
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+});
+</script>
+{% endblock %}

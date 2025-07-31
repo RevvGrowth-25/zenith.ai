@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results - Zenith.ai{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Search Results
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Detailed view of all search queries and AI responses
+            </p>
+        </div>
+    </div>
+
+    <!-- Brand Selection and Filters -->
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-4">
+            <!-- Brand Selection -->
+            <div>
+                <label for="brand-select" class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                <select id="brand-select" onchange="changeBrand(this.value)"
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    {% for brand in brands %}
+                    <option value="{{ brand.id }}" {% if current_brand and brand.id == current_brand.id %}selected{% endif %}>
+                        {{ brand.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Platform Filter -->
+            <div>
+                <label for="platform-filter" class="block text-sm font-medium text-gray-700 mb-2">Platform</label>
+                <select id="platform-filter" onchange="applyFilters()"
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <option value="">All Platforms</option>
+                    <option value="chatgpt" {% if platform_filter == 'chatgpt' %}selected{% endif %}>ChatGPT</option>
+                    <option value="claude" {% if platform_filter == 'claude' %}selected{% endif %}>Claude</option>
+                    <option value="perplexity" {% if platform_filter == 'perplexity' %}selected{% endif %}>Perplexity</option>
+                </select>
+            </div>
+
+            <!-- Date Range Filter -->
+            <div>
+                <label for="date-filter" class="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
+                <select id="date-filter" onchange="applyFilters()"
+                        class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                    <option value="7" {% if date_filter == '7' %}selected{% endif %}>Last 7 days</option>
+                    <option value="30" {% if date_filter == '30' %}selected{% endif %}>Last 30 days</option>
+                    <option value="90" {% if date_filter == '90' %}selected{% endif %}>Last 90 days</option>
+                </select>
+            </div>
+
+            <!-- Apply Filters Button -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">&nbsp;</label>
+                <button onclick="applyFilters()"
+                        class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i data-lucide="filter" class="w-4 h-4 mr-2"></i>
+                    Apply Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if current_brand and search_results %}
+    <!-- Results -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+            {% for result in search_results.items %}
+            <li>
+                <div class="px-4 py-4 sm:px-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                {% if result.ai_platform == 'chatgpt' %}bg-green-100 text-green-800
+                                {% elif result.ai_platform == 'claude' %}bg-blue-100 text-blue-800
+                                {% elif result.ai_platform == 'perplexity' %}bg-purple-100 text-purple-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ result.ai_platform.title() }}
+                            </span>
+                            <span class="text-sm text-gray-500">{{ result.created_at.strftime('%b %d, %Y at %H:%M') }}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            {% if result.sentiment_score %}
+                                {% if result.sentiment_score > 0.1 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    <i data-lucide="smile" class="w-3 h-3 mr-1"></i>
+                                    Positive
+                                </span>
+                                {% elif result.sentiment_score < -0.1 %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                                    <i data-lucide="frown" class="w-3 h-3 mr-1"></i>
+                                    Negative
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    <i data-lucide="meh" class="w-3 h-3 mr-1"></i>
+                                    Neutral
+                                </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Query -->
+                    <div class="mb-3">
+                        <h4 class="text-sm font-medium text-gray-900 mb-1">Query:</h4>
+                        <p class="text-sm text-gray-700 italic">"{{ result.query_text }}"</p>
+                    </div>
+
+                    <!-- Response -->
+                    <div class="mb-3">
+                        <h4 class="text-sm font-medium text-gray-900 mb-1">AI Response:</h4>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-sm text-gray-700">{{ result.response_text[:500] }}{% if result.response_text|length > 500 %}...{% endif %}</p>
+                            {% if result.response_text|length > 500 %}
+                            <button onclick="showFullResponse({{ result.id }})"
+                                    class="mt-2 text-xs text-blue-600 hover:text-blue-500">
+                                Show full response
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Brand Analysis -->
+                    {% if result.brand_mentions %}
+                    <div class="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <h4 class="text-sm font-medium text-blue-900 mb-2">Brand Analysis:</h4>
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <span class="text-blue-700">Direct Mentions:</span>
+                                <span class="font-medium text-blue-900">{{ result.brand_mentions.get('direct_mentions', 0) }}</span>
+                            </div>
+                            <div>
+                                <span class="text-blue-700">Mention Type:</span>
+                                <span class="font-medium text-blue-900">{{ result.brand_mentions.get('mention_type', 'none').title() }}</span>
+                            </div>
+                            <div>
+                                <span class="text-blue-700">Visibility Score:</span>
+                                <span class="font-medium text-blue-900">{{ result.brand_mentions.get('visibility_score', 0) }}%</span>
+                            </div>
+                            <div>
+                                <span class="text-blue-700">Sentiment:</span>
+                                <span class="font-medium text-blue-900">{{ "%.2f"|format(result.brand_mentions.get('sentiment_score', 0)) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Pagination -->
+    {% if search_results.pages > 1 %}
+    <div class="mt-6 flex items-center justify-between">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if search_results.has_prev %}
+            <a href="{{ url_for('analytics.search_results', brand_id=current_brand.id, page=search_results.prev_num, platform=platform_filter, date_range=date_filter) }}"
+               class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+            </a>
+            {% endif %}
+            {% if search_results.has_next %}
+            <a href="{{ url_for('analytics.search_results', brand_id=current_brand.id, page=search_results.next_num, platform=platform_filter, date_range=date_filter) }}"
+               class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+            </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing {{ search_results.per_page * (search_results.page - 1) + 1 }} to
+                    {{ search_results.per_page * (search_results.page - 1) + search_results.items|length }} of
+                    {{ search_results.total }} results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {% for page_num in search_results.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != search_results.page %}
+                            <a href="{{ url_for('analytics.search_results', brand_id=current_brand.id, page=page_num, platform=platform_filter, date_range=date_filter) }}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ page_num }}
+                            </a>
+                            {% else %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                                {{ page_num }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                        </span>
+                        {% endif %}
+                    {% endfor %}
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% elif current_brand %}
+    <!-- No Results -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="search-x" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No search results found</h3>
+        <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or run brand monitoring first.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('dashboard.index') }}"
+               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Go to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Brand Selected -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="search" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Select a brand</h3>
+        <p class="mt-1 text-sm text-gray-500">Choose a brand to view its search results.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Full Response Modal -->
+<div id="responseModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Full AI Response</h3>
+                <button onclick="closeResponseModal()" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div class="mt-2 px-7 py-3">
+                <div id="fullResponseContent" class="text-sm text-gray-700 max-h-96 overflow-y-auto">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button onclick="closeResponseModal()"
+                        class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function changeBrand(brandId) {
+    window.location.href = `{{ url_for('analytics.search_results') }}?brand_id=${brandId}`;
+}
+
+function applyFilters() {
+    const brandId = document.getElementById('brand-select').value;
+    const platform = document.getElementById('platform-filter').value;
+    const dateRange = document.getElementById('date-filter').value;
+
+    let url = `{{ url_for('analytics.search_results') }}?brand_id=${brandId}`;
+    if (platform) url += `&platform=${platform}`;
+    if (dateRange) url += `&date_range=${dateRange}`;
+
+    window.location.href = url;
+}
+
+function showFullResponse(queryId) {
+    // In a real implementation, you'd fetch the full response via API
+    // For now, we'll show a placeholder
+    document.getElementById('fullResponseContent').innerHTML = 'Loading full response...';
+    document.getElementById('responseModal').classList.remove('hidden');
+}
+
+function closeResponseModal() {
+    document.getElementById('responseModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('responseModal').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeResponseModal();
+    }
+});
+</script>
+{% endblock %}

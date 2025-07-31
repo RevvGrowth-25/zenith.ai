@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block title %}Competitor Analysis - Zenith.ai{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Competitor Analysis
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                Monitor and compare your brand performance against key competitors
+            </p>
+        </div>
+        <div class="mt-4 flex md:mt-0 md:ml-4">
+            {% if current_brand and current_brand.competitors %}
+            <button onclick="runCompetitorAnalysis()"
+                    class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+                Run Analysis
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not brands %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="users" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No brands to analyze</h3>
+        <p class="mt-1 text-sm text-gray-500">Add a brand first to see competitor analysis.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('dashboard.new_brand') }}"
+               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add your first brand
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Brand Selection -->
+    <div class="mb-6">
+        <label for="brand-select" class="block text-sm font-medium text-gray-700 mb-2">Select Brand</label>
+        <select id="brand-select" onchange="changeBrand(this.value)"
+                class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            {% for brand in brands %}
+            <option value="{{ brand.id }}" {% if current_brand and brand.id == current_brand.id %}selected{% endif %}>
+                {{ brand.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if current_brand %}
+        {% if not current_brand.competitors %}
+        <!-- No Competitors Defined -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-lucide="alert-triangle" class="h-5 w-5 text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">No competitors defined</h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>Add competitors to your brand profile to enable competitive analysis.</p>
+                    </div>
+                    <div class="mt-4">
+                        <div class="-mx-2 -my-1.5 flex">
+                            <a href="{{ url_for('dashboard.edit_brand', brand_id=current_brand.id) }}"
+                               class="bg-yellow-100 px-3 py-2 rounded-md text-sm font-medium text-yellow-800 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600">
+                                Add Competitors
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Analysis Status -->
+        <div id="analysis-status" class="hidden mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-blue-800" id="analysis-message">
+                            Running competitor analysis...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Position Overview -->
+        {% if competitive_analysis %}
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-3 mb-8">
+            <!-- Market Share -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="pie-chart" class="h-6 w-6 text-blue-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Mention Rate</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ competitive_analysis.market_share.brand_mention_rate }}%</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="font-medium {% if competitive_analysis.market_share.category_strength == 'Strong' %}text-green-600{% elif competitive_analysis.market_share.category_strength == 'Medium' %}text-yellow-600{% else %}text-red-600{% endif %}">
+                            {{ competitive_analysis.market_share.category_strength }}
+                        </span>
+                        <span class="text-gray-500">category presence</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Position -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="target" class="h-6 w-6 text-green-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Avg Position</dt>
+                                <dd class="text-lg font-medium text-gray-900">#{{ competitive_analysis.market_share.avg_position }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="font-medium {% if competitive_analysis.market_share.avg_position <= 2 %}text-green-600{% elif competitive_analysis.market_share.avg_position <= 4 %}text-yellow-600{% else %}text-red-600{% endif %}">
+                            {% if competitive_analysis.market_share.avg_position <= 2 %}Excellent
+                            {% elif competitive_analysis.market_share.avg_position <= 4 %}Good
+                            {% else %}Needs improvement{% endif %}
+                        </span>
+                        <span class="text-gray-500">when mentioned</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Competitor -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="crown" class="h-6 w-6 text-yellow-400"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Top Competitor</dt>
+                                <dd class="text-lg font-medium text-gray-900">
+                                    {% if competitive_analysis.competitor_dominance %}
+                                        {{ competitive_analysis.competitor_dominance.keys() | list | first }}
+                                    {% else %}N/A{% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <span class="font-medium text-orange-600">
+                            {% if competitive_analysis.competitor_dominance %}
+                                {{ competitive_analysis.competitor_dominance.values() | list | first }}% dominance
+                            {% else %}No data{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Competitor Performance Table -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Competitor Performance</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Visibility and sentiment analysis across AI platforms</p>
+            </div>
+
+            {% if competitor_data %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Competitor
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Mentions
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Avg Visibility
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sentiment
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Performance
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for competitor, data in competitor_data.items() %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-8 w-8">
+                                        <div class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-gray-700">{{ competitor[0] }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ competitor }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ data.total_mentions }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="text-sm text-gray-900">{{ data.avg_visibility }}%</div>
+                                    <div class="ml-2 w-16 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-600 h-2 rounded-full" style="width: {{ data.avg_visibility }}%"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if data.avg_sentiment > 0.1 %}bg-green-100 text-green-800
+                                    {% elif data.avg_sentiment < -0.1 %}bg-red-100 text-red-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {% if data.avg_sentiment > 0.1 %}Positive
+                                    {% elif data.avg_sentiment < -0.1 %}Negative
+                                    {% else %}Neutral{% endif %}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if data.avg_visibility > 70 %}
+                                <span class="text-green-600 font-medium">Strong</span>
+                                {% elif data.avg_visibility > 40 %}
+                                <span class="text-yellow-600 font-medium">Medium</span>
+                                {% else %}
+                                <span class="text-red-600 font-medium">Weak</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="px-6 py-8 text-center">
+                <i data-lucide="bar-chart" class="mx-auto h-12 w-12 text-gray-400"></i>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No competitor data yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Run competitor analysis to see performance data.</p>
+                <div class="mt-4">
+                    <button onclick="runCompetitorAnalysis()"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                        <i data-lucide="users" class="w-4 h-4 mr-2"></i>
+                        Run Analysis
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Competitive Insights -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Market Dominance Chart -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Market Dominance</h3>
+                <div class="h-64">
+                    <canvas id="dominance-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Competitive Trends -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Visibility Trends</h3>
+                <div class="h-64">
+                    <canvas id="trends-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitive Opportunities -->
+        {% if competitive_analysis and competitive_analysis.opportunities %}
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Competitive Opportunities</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="space-y-4">
+                    {% for opportunity in competitive_analysis.opportunities %}
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="lightbulb" class="h-5 w-5 text-yellow-500 mt-0.5"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-gray-900">{{ opportunity }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Competitor List -->
+        <div class="mt-8 bg-white shadow rounded-lg">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-medium text-gray-900">Tracked Competitors</h3>
+                <a href="{{ url_for('dashboard.edit_brand', brand_id=current_brand.id) }}"
+                   class="text-sm text-blue-600 hover:text-blue-500">
+                    Manage competitors →
+                </a>
+            </div>
+            <div class="px-6 py-4">
+                <div class="flex flex-wrap gap-2">
+                    {% for competitor in current_brand.competitors %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {{ competitor }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% endif %}
+    {% else %}
+    <!-- No Brand Selected -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="users" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">Select a brand</h3>
+        <p class="mt-1 text-sm text-gray-500">Choose a brand from the dropdown to view competitor analysis.</p>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentBrandId = {{ current_brand.id if current_brand else 'null' }};
+let dominanceChart, trendsChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (currentBrandId) {
+        initializeCharts();
+    }
+});
+
+function changeBrand(brandId) {
+    currentBrandId = brandId;
+    window.location.href = `{{ url_for('analytics.competitors') }}?brand_id=${brandId}`;
+}
+
+function runCompetitorAnalysis() {
+    if (!currentBrandId) {
+        alert('Please select a brand first');
+        return;
+    }
+
+    showAnalysisStatus('Running comprehensive competitor analysis... This may take several minutes.');
+
+    fetch(`/analytics/api/competitors/${currentBrandId}/analyze`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideAnalysisStatus();
+
+        if (data.success) {
+            let results = data.results;
+            let message = `Competitor analysis completed!\n\n`;
+            message += `Brand: ${results.brand_name}\n`;
+            message += `Competitors analyzed: ${results.competitors.length}\n`;
+            message += `Competitive queries tested: ${results.competitive_queries.length}\n`;
+            message += `Market positioning: ${results.market_positioning.category_strength}\n\n`;
+            message += `Page will refresh to show updated results.`;
+
+            alert(message);
+
+            // Refresh page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            alert('Error running competitor analysis: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        hideAnalysisStatus();
+        console.error('Error:', error);
+        alert('Error running competitor analysis. Please check your settings and try again.');
+    });
+}
+
+function showAnalysisStatus(message) {
+    document.getElementById('analysis-message').textContent = message;
+    document.getElementById('analysis-status').classList.remove('hidden');
+}
+
+function hideAnalysisStatus() {
+    document.getElementById('analysis-status').classList.add('hidden');
+}
+
+function initializeCharts() {
+    // Market Dominance Chart
+    const dominanceCtx = document.getElementById('dominance-chart');
+    if (dominanceCtx) {
+        dominanceChart = new Chart(dominanceCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: {{ competitive_analysis.competitor_dominance.keys() | list | tojson if competitive_analysis else '[]' }},
+                datasets: [{
+                    data: {{ competitive_analysis.competitor_dominance.values() | list if competitive_analysis else '[]' }},
+                    backgroundColor: [
+                        '#ef4444',
+                        '#f97316',
+                        '#eab308',
+                        '#22c55e',
+                        '#3b82f6',
+                        '#8b5cf6',
+                        '#ec4899'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Competitive Trends Chart
+    const trendsCtx = document.getElementById('trends-chart');
+    if (trendsCtx) {
+        trendsChart = new Chart(trendsCtx.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: '{{ current_brand.name if current_brand else "Your Brand" }}',
+                    data: [65, 68, 70, 72],
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

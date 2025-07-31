@@ -1,0 +1,159 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Analytics{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- User Analytics -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">User Analytics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">User Distribution by Role</h4>
+                <div class="space-y-2">
+                    {% for role_data in user_analytics.role_distribution %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <span class="text-sm font-medium text-gray-700">{{ role_data.role.title() }}</span>
+                        <span class="text-sm text-gray-900">{{ role_data.count }} users</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">User Role Chart</h4>
+                <div class="h-64">
+                    <canvas id="roleChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brand Analytics -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Brand Analytics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">Brands by Industry</h4>
+                <div class="space-y-2">
+                    {% for industry_data in brand_analytics.industry_distribution %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <span class="text-sm font-medium text-gray-700">{{ industry_data.industry }}</span>
+                        <span class="text-sm text-gray-900">{{ industry_data.count }} brands</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">Industry Distribution</h4>
+                <div class="h-64">
+                    <canvas id="industryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Analytics -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Activity Analytics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">Activity Types</h4>
+                <div class="space-y-2">
+                    {% for activity_data in activity_analytics.activity_types %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <span class="text-sm font-medium text-gray-700">{{ activity_data.type.replace('_', ' ').title() }}</span>
+                        <span class="text-sm text-gray-900">{{ activity_data.count }} activities</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div>
+                <h4 class="text-md font-medium text-gray-800 mb-3">Daily Activity (Last 7 Days)</h4>
+                <div class="h-64">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Role Distribution Chart
+const roleData = {{ user_analytics.role_distribution | safe }};
+const roleCtx = document.getElementById('roleChart').getContext('2d');
+new Chart(roleCtx, {
+    type: 'doughnut',
+    data: {
+        labels: roleData.map(d => d.role.charAt(0).toUpperCase() + d.role.slice(1)),
+        datasets: [{
+            data: roleData.map(d => d.count),
+            backgroundColor: [
+                '#3B82F6', // Blue
+                '#10B981', // Green
+                '#F59E0B', // Yellow
+                '#EF4444', // Red
+                '#8B5CF6'  // Purple
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Industry Distribution Chart
+const industryData = {{ brand_analytics.industry_distribution | safe }};
+const industryCtx = document.getElementById('industryChart').getContext('2d');
+new Chart(industryCtx, {
+    type: 'bar',
+    data: {
+        labels: industryData.map(d => d.industry),
+        datasets: [{
+            label: 'Brands',
+            data: industryData.map(d => d.count),
+            backgroundColor: 'rgba(59, 130, 246, 0.8)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Activity Chart
+const activityData = {{ activity_analytics.daily_activity | safe }};
+const activityCtx = document.getElementById('activityChart').getContext('2d');
+new Chart(activityCtx, {
+    type: 'line',
+    data: {
+        labels: activityData.map(d => d.date),
+        datasets: [{
+            label: 'Activities',
+            data: activityData.map(d => d.count),
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

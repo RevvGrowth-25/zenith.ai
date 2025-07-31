@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Zenith.ai - Enterprise Brand Intelligence Platform{% endblock %}</title>
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+
+    <!-- Meta Tags for SEO -->
+    <meta name="description" content="Enterprise-grade Zenith.ai platform for brand intelligence, competitor analysis, and market insights across ChatGPT, Claude, and Perplexity.">
+    <meta name="keywords" content="Zenith.ai, brand intelligence, competitor analysis, market insights, ChatGPT analytics, Claude analytics">
+    <meta name="author" content="Zenith.ai">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #1e40af;
+            --primary-dark: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+        }
+
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .gradient-bg {
+            background: var(--gradient-primary);
+        }
+
+        .gradient-text {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    /* Hide scrollbar for sidebar navigation */
+.sidebar-nav {
+    padding: 1rem 0;
+    flex: 1;
+    overflow-y: auto;
+    /* Hide scrollbar for WebKit browsers (Chrome, Safari, Edge) */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none; /* WebKit browsers */
+}
+
+/* Optional: Add subtle fade effect at top and bottom when scrolling */
+.sidebar-nav {
+    padding: 1rem 0;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* Add gradient fade effects for better UX */
+.sidebar-nav::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(180deg, rgba(30, 64, 175, 1) 0%, rgba(30, 64, 175, 0) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.sidebar-nav::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(0deg, rgba(30, 58, 138, 1) 0%, rgba(30, 58, 138, 0) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
+        /* Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 50%, #1a365d 100%);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed .sidebar-logo .logo-text {
+            opacity: 0;
+            width: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-section-title {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0 1.5rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed .nav-section-title {
+            opacity: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(4px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left: 4px solid #60a5fa;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            right: 1rem;
+            width: 6px;
+            height: 6px;
+            background: #60a5fa;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .nav-text {
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed .nav-text {
+            opacity: 0;
+            width: 0;
+            margin: 0;
+        }
+
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 0.75rem;
+        }
+
+        .sidebar.collapsed .nav-icon {
+            margin: 0;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+        }
+
+        .main-content.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* Mobile Sidebar */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .main-content.expanded {
+                margin-left: 0;
+            }
+        }
+
+        /* User Profile */
+        .user-profile {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--gradient-accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .user-details {
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed .user-details {
+            opacity: 0;
+            width: 0;
+            margin: 0;
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+        }
+
+        /* Loading States */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Alert Styles */
+        .alert-success {
+            background: linear-gradient(90deg, #d1fae5, #a7f3d0);
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: linear-gradient(90deg, #fee2e2, #fecaca);
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        .alert-info {
+            background: linear-gradient(90deg, #dbeafe, #bfdbfe);
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        /* Footer adjustment for sidebar */
+        .sidebar-footer {
+            margin-left: var(--sidebar-width);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-footer.expanded {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-footer {
+                margin-left: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                margin-left: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar {
+                width: var(--sidebar-collapsed-width);
+            }
+
+            .sidebar-footer {
+                margin-left: var(--sidebar-collapsed-width);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    {% if current_user and current_user.is_authenticated %}
+    <!-- Sidebar Overlay for Mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar flex flex-col" id="sidebar">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center mr-3">
+                    <img src="https://i.ibb.co/fdkpnPSW/Rectangle-227.png" alt="Zenith.ai" class="w-6 h-6">
+                </div>
+                <div class="logo-text">
+                    <span class="text-white font-bold text-xl">Zenith.ai</span>
+                    <div class="text-blue-200 text-xs">Enterprise Intelligence</div>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="text-white/60 hover:text-white transition-colors p-1 rounded-md hover:bg-white/10">
+                <i data-lucide="panel-left" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar-nav">
+            <!-- Main Navigation -->
+            <div class="nav-section">
+                <div class="nav-section-title">Main</div>
+
+                <a href="{{ url_for('dashboard.index') }}"
+                   class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                    <i data-lucide="home" class="nav-icon"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('ai_overview.ai_overview_page') }}"
+                   class="nav-item {% if 'ai_overview' in request.endpoint %}active{% endif %}">
+                    <i data-lucide="sparkles" class="nav-icon"></i>
+                    <span class="nav-text">AI Overview</span>
+                    <span class="notification-badge"></span>
+                </a>
+
+                <a href="{{ url_for('dashboard.my_brands') }}"
+                   class="nav-item {% if request.endpoint == 'dashboard.my_brands' %}active{% endif %}">
+                    <i data-lucide="tag" class="nav-icon"></i>
+                    <span class="nav-text">My Brands</span>
+                </a>
+            </div>
+
+            <!-- Analytics Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Analytics</div>
+
+                <a href="{{ url_for('analytics.overview') }}"
+                   class="nav-item {% if request.endpoint == 'analytics.overview' %}active{% endif %}">
+                    <i data-lucide="bar-chart-3" class="nav-icon"></i>
+                    <span class="nav-text">Analytics Overview</span>
+                </a>
+
+                <a href="{{ url_for('analytics.competitors') }}"
+                   class="nav-item {% if request.endpoint == 'analytics.competitors' %}active{% endif %}">
+                    <i data-lucide="users" class="nav-icon"></i>
+                    <span class="nav-text">Competitors</span>
+                </a>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="trending-up" class="nav-icon"></i>
+                    <span class="nav-text">Performance</span>
+                </a>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="pie-chart" class="nav-icon"></i>
+                    <span class="nav-text">Reports</span>
+                </a>
+            </div>
+
+            <!-- Tools Section -->
+            <div class="nav-section">
+                <div class="nav-section-title">Tools</div>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="search" class="nav-icon"></i>
+                    <span class="nav-text">Brand Monitor</span>
+                </a>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="heart" class="nav-icon"></i>
+                    <span class="nav-text">Sentiment Analysis</span>
+                </a>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="bell" class="nav-icon"></i>
+                    <span class="nav-text">Alerts</span>
+                    <span class="notification-badge"></span>
+                </a>
+            </div>
+
+            <!-- Admin Section -->
+            {% if current_user.is_admin() %}
+            <div class="nav-section">
+                <div class="nav-section-title">Admin</div>
+
+                <a href="{{ url_for('admin.dashboard') }}"
+                   class="nav-item {% if 'admin' in request.endpoint %}active{% endif %}">
+                    <i data-lucide="shield" class="nav-icon"></i>
+                    <span class="nav-text">Admin Panel</span>
+                </a>
+
+                <a href="#" class="nav-item">
+                    <i data-lucide="users-2" class="nav-icon"></i>
+                    <span class="nav-text">User Management</span>
+                </a>
+
+                <a href="" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+    <i data-lucide="user" class="w-4 h-4 mr-3 text-gray-400"></i>
+    Profile Settings
+</a>
+            </div>
+            {% endif %}
+        </nav>
+
+        <!-- User Profile -->
+        <div class="user-profile">
+            <div class="user-info" onclick="toggleUserMenu()">
+                <div class="user-avatar">
+                    {{ current_user.first_name[0] if current_user.first_name else 'U' }}{{ current_user.last_name[0] if current_user.last_name else '' }}
+                </div>
+                <div class="user-details">
+                    <div class="text-sm font-semibold">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                    <div class="text-xs text-blue-200">
+                        {% if current_user.is_admin() %}Administrator{% else %}{{ current_user.company or 'User' }}{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- User Menu Dropdown -->
+    <div class="fixed bottom-20 left-80 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 hidden z-50" id="userMenu">
+        <div class="py-2">
+            <!-- User Info -->
+            <div class="px-4 py-3 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center text-white font-semibold">
+                        {{ current_user.first_name[0] }}{{ current_user.last_name[0] }}
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-900">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                        <div class="text-xs text-gray-500">{{ current_user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Menu Items -->
+            <!-- Replace the existing profile links in the user menu with these: -->
+<a href="{{ url_for('profile.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+    <i data-lucide="user" class="w-4 h-4 mr-3 text-gray-400"></i>
+    Profile Settings
+</a>
+<a href="{{ url_for('profile.settings') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+    <i data-lucide="settings" class="w-4 h-4 mr-3 text-gray-400"></i>
+    Account Settings
+</a>
+
+            <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                <i data lucide="help-circle" class="w-4 h-4 mr-3 text-gray-400"></i>
+                Help & Support
+            </a>
+
+            <div class="border-t border-gray-100 mt-2 pt-2">
+                <a href="{{ url_for('auth.logout') }}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-3 text-red-500"></i>
+                    Sign out
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="flex items-center">
+                <button onclick="toggleMobileSidebar()" class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg mr-3">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <div>
+                    <h1 class="text-xl font-semibold text-gray-900">
+                        {% block page_title %}
+                            {% if request.endpoint == 'dashboard.index' %}Dashboard
+                            {% elif request.endpoint == 'ai_overview.ai_overview_page' %}AI Overview
+                            {% elif request.endpoint == 'dashboard.my_brands' %}My Brands
+                            {% elif request.endpoint == 'analytics.overview' %}Analytics Overview
+                            {% elif request.endpoint == 'analytics.competitors' %}Competitor Analysis
+                            {% elif 'admin' in request.endpoint %}Admin Panel
+                            {% else %}Zenith.ai
+                            {% endif %}
+                        {% endblock %}
+                    </h1>
+                    <p class="text-sm text-gray-500">
+                        {% block page_description %}Welcome back, {{ current_user.first_name }}!{% endblock %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <!-- Search -->
+                <div class="hidden md:flex items-center">
+                    <div class="relative">
+                        <input type="text" placeholder="Search..."
+                               class="w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <button class="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 bg-red-400 rounded-full"></span>
+                </button>
+
+                <!-- Settings -->
+                <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i data-lucide="settings" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div class="p-6">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="mb-6">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} border-l-4 px-6 py-4 rounded-r-lg mb-4 shadow-lg">
+                                <div class="flex items-center">
+                                    {% if category == 'success' %}
+                                    <i data-lucide="check-circle" class="w-5 h-5 mr-3 text-green-600"></i>
+                                    {% elif category == 'error' %}
+                                    <i data-lucide="x-circle" class="w-5 h-5 mr-3 text-red-600"></i>
+                                    {% else %}
+                                    <i data-lucide="info" class="w-5 h-5 mr-3 text-blue-600"></i>
+                                    {% endif %}
+                                    <span class="font-medium">{{ message }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- Main Content Block - SINGLE DEFINITION -->
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    {% else %}
+    <!-- Non-authenticated users - show without sidebar -->
+    <main class="min-h-screen">
+        <!-- Flash Messages for non-authenticated pages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="max-w-md mx-auto mt-4 px-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} border-l-4 px-6 py-4 rounded-r-lg mb-4 shadow-lg">
+                            <div class="flex items-center">
+                                {% if category == 'success' %}
+                                <i data-lucide="check-circle" class="w-5 h-5 mr-3 text-green-600"></i>
+                                {% elif category == 'error' %}
+                                <i data-lucide="x-circle" class="w-5 h-5 mr-3 text-red-600"></i>
+                                {% else %}
+                                <i data-lucide="info" class="w-5 h-5 mr-3 text-blue-600"></i>
+                                {% endif %}
+                                <span class="font-medium">{{ message }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Content for non-authenticated users -->
+        {% block auth_content %}{% endblock %}
+    </main>
+    {% endif %}
+
+    <!-- Footer -->
+    <footer class="{% if current_user and current_user.is_authenticated %}sidebar-footer{% endif %} bg-white border-t border-gray-200" id="footer">
+        <div class="max-w-7xl mx-auto py-12 px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center mr-3">
+                            <img src="https://i.ibb.co/fdkpnPSW/Rectangle-227.png" alt="Zenith.ai" class="w-5 h-5">
+                        </div>
+                        <span class="gradient-text text-xl font-bold">Zenith.ai</span>
+                    </div>
+                    <p class="text-gray-600 text-sm max-w-md">
+                        Enterprise-grade Zenith.ai platform providing comprehensive brand intelligence,
+                        competitor analysis, and market insights across leading AI platforms.
+                    </p>
+                    <div class="flex space-x-4 mt-6">
+                        <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                            <i data-lucide="twitter" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                            <i data-lucide="linkedin" class="w-5 h-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-blue-600 transition-colors">
+                            <i data-lucide="github" class="w-5 h-5"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Features</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Brand Monitoring</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Competitor Analysis</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Sentiment Analysis</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Market Intelligence</a></li>
+                    </ul>
+                </div>
+
+                <!-- Support -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Support</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Documentation</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">API Reference</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Help Center</a></li>
+                        <li><a href="#" class="text-gray-600 hover:text-blue-600 text-sm transition-colors">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 pt-8 mt-8">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-500 text-sm">
+                        © 2024 Zenith.ai. All rights reserved. Built with ❤️ for enterprise intelligence.
+                    </p>
+                    <div class="flex items-center space-x-1 mt-4 md:mt-0">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="text-xs text-gray-500">System Status: All services operational</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Initialize Lucide icons
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Sidebar toggle functionality
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const footer = document.getElementById('footer');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            if (footer) footer.classList.toggle('expanded');
+
+            // Save state to localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Mobile sidebar toggle
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // User menu toggle
+        function toggleUserMenu() {
+            const menu = document.getElementById('userMenu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        // Close user menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('userMenu');
+            const userProfile = document.querySelector('.user-profile');
+
+            if (menu && userProfile && !menu.contains(event.target) && !userProfile.contains(event.target)) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Restore sidebar state from localStorage
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (sidebarCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+                const footer = document.getElementById('footer');
+                if (footer) footer.classList.add('expanded');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth <= 1024) {
+                document.getElementById('sidebar').classList.add('collapsed');
+                document.getElementById('mainContent').classList.add('expanded');
+                const footer = document.getElementById('footer');
+                if (footer) footer.classList.add('expanded');
+            }
+        });
+
+        // Add loading states for buttons
+        function addLoadingState(button, originalText) {
+            button.disabled = true;
+            button.innerHTML = `<span class="loading-spinner mr-2"></span>${originalText}`;
+        }
+
+        function removeLoadingState(button, originalText) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

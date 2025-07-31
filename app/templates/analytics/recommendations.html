@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Recommendations - Zenith.ai{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="md:flex md:items-center md:justify-between mb-8">
+        <div class="flex-1 min-w-0">
+            <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+                Optimization Recommendations
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+                AI-powered insights to improve your brand visibility
+            </p>
+        </div>
+    </div>
+
+    {% if not brands %}
+    <!-- Empty State -->
+    <div class="text-center py-12">
+        <div class="mx-auto h-12 w-12 text-gray-400">
+            <i data-lucide="lightbulb" class="h-12 w-12"></i>
+        </div>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No brands to analyze</h3>
+        <p class="mt-1 text-sm text-gray-500">Add a brand first to get recommendations.</p>
+        <div class="mt-6">
+            <a href="{{ url_for('dashboard.new_brand') }}"
+               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Add your first brand
+            </a>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- Brand Selection -->
+    <div class="mb-6">
+        <label for="brand-select" class="block text-sm font-medium text-gray-700 mb-2">Select Brand</label>
+        <select id="brand-select" onchange="changeBrand(this.value)"
+                class="block w-full max-w-xs pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+            {% for brand in brands %}
+            <option value="{{ brand.id }}" {% if current_brand and brand.id == current_brand.id %}selected{% endif %}>
+                {{ brand.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if current_brand %}
+    <!-- Recommendations -->
+    <div class="space-y-6">
+        {% if recommendations %}
+            {% for rec in recommendations %}
+            <div class="bg-white shadow rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">{{ rec.title }}</h3>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                        {% if rec.priority == 'high' %}bg-red-100 text-red-800
+                        {% elif rec.priority == 'medium' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-green-100 text-green-800{% endif %}">
+                        {{ rec.priority.title() }} Priority
+                    </span>
+                </div>
+                <p class="text-gray-600 mb-4">{{ rec.description }}</p>
+
+                {% if rec.action_items %}
+                <div>
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">Action Items:</h4>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-gray-600">
+                        {% for action in rec.action_items %}
+                        <li>{{ action }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center py-12">
+            <div class="mx-auto h-12 w-12 text-gray-400">
+                <i data-lucide="lightbulb" class="h-12 w-12"></i>
+            </div>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No recommendations yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Run brand monitoring to get personalized recommendations.</p>
+            <div class="mt-6">
+                <a href="{{ url_for('dashboard.index') }}"
+                   class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+
+<script>
+function changeBrand(brandId) {
+    window.location.href = `{{ url_for('analytics.recommendations') }}?brand_id=${brandId}`;
+}
+</script>
+{% endblock %}
